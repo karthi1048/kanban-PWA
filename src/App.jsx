@@ -1,36 +1,22 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const columns = ["To Do", "In Progress", "Done"];
 
   return (
     <>
-      <h1 className='text-3xl font-bold underline'>Hello world!</h1>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      {/* <h1 className='text-3xl m-4 font-bold'>Kanban</h1> */}
+
+      {/* Board */}
+      <div className='flex h-screen bg-gray-100 p-6 gap-6'>
+        {/* Iterate over columns & return div for each column */}
+        { columns.map((col) => (
+          // Columns
+          <div key={col} className='flex-1 bg-white rounded-2xl shadow-md p-4'>
+            <h2 className='text-xl font-bold mb-4'>{col}</h2>      
+          </div>
+        ))}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
-
-export default App
