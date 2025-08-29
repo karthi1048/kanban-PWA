@@ -8,6 +8,9 @@ export default function App() {
     "In Progress": [{id:'t3', text:"Task 3"}],
     "Done": [{id:'t4', text:"Task 4"}],
   });
+
+  // to track which column is being hovered
+  const [dragOverCol, setDragOverCol] = useState(null);
   
   // NOTE: Utilizing "DragEvent API" for drag & drop 
   // e is React's SyntheticEvent wrapping Native Events.
@@ -18,7 +21,8 @@ export default function App() {
     // stores the source column id/name to tell drop handler where the dragged element's from.
     e.dataTransfer.setData(                                     
       "application/json", 
-      JSON.stringify({ id: task.id, from: fromCol }));                       
+      JSON.stringify({ id: task.id, from: fromCol })
+    );                       
     e.dataTransfer.effectAllowed = "move";                // to hint it's a move operation.                 
   };
 
@@ -49,6 +53,8 @@ export default function App() {
       newBoard[toCol] = [...newBoard[toCol], task];
       return newBoard;
     });
+
+    setDragOverCol(null);   // reset the highlight after drop
   };
 
   /*
@@ -66,11 +72,15 @@ export default function App() {
         {/* Get [key, value], destructure as [col, tasks] & return div for each column*/}
         { Object.entries(board).map(([col, tasks]) => (
           // Columns
+          // we use 'conditional tailwind classes' to highlight columns, while element(task) hover.
           <div 
             key={col} 
-            className='flex-1 bg-white rounded-2xl shadow-md p-4'
+            className={`flex-1 rounded-2xl shadow-md p-4 transition-colors 
+              ${dragOverCol === col ? "bg-blue-100" : "bg-white"}`}
             onDragOver={ (e) => e.preventDefault() }   // to allow dropping
-            onDrop={ (e) => handleDrop(e, col) }>
+            onDrop={ (e) => handleDrop(e, col) }
+            onDragEnter={ () => setDragOverCol(col) }
+            onDragLeave={ () => setDragOverCol(null)}>
             <h2 className='text-xl font-bold mb-4'>{col}</h2>
             {/* Similar to columns, return div for each task */}
             { tasks.map((task) => (
