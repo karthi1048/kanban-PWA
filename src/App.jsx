@@ -1,19 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css'
 
 export default function App() {
-  // Column names: Array of tasks
-  const [board, setBoard] = useState({
-    "To DO": [
-      {id:'t1', text:"Task 1"}, 
-      {id:'t2', text:"Task 2"},
-    ],
-    "In Progress": [{id:'t3', text:"Task 3"}],
-    "Done": [{id:'t4', text:"Task 4"}],
+  // Load from localStorage if available, else use the defaults
+  const [board, setBoard] = useState(() => {
+    const saved = localStorage.getItem("board");
+    return saved ? JSON.parse(saved) : {
+      "To DO": [
+        {id:'t1', text:"Task 1"}, 
+        {id:'t2', text:"Task 2"},
+      ],
+      "In Progress": [{id:'t3', text:"Task 3"}],
+      "Done": [{id:'t4', text:"Task 4"}],
+    };
   });
+  // Column names: Array of tasks
 
   // to track which column is being hovered
   const [dragOverCol, setDragOverCol] = useState(null);
+
+  // Save to localStorage whenever board changes
+  useEffect(() => {
+    localStorage.setItem("board", JSON.stringify(board));
+  }, [board]);
   
   // NOTE: Utilizing "DragEvent API" for drag & drop 
   // e is React's SyntheticEvent wrapping Native Events.
@@ -37,7 +46,6 @@ export default function App() {
   // Used when dragged element is dropped on column.
   const handleDrop = (e, toCol, targetTaskId = null) => {
     e.preventDefault();
-
 
     const raw = e.dataTransfer.getData("application/json");     // retrieve stored element identifier & source column
     if(!raw) return;
