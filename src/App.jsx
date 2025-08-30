@@ -4,7 +4,10 @@ import './App.css'
 export default function App() {
   // Column names: Array of tasks
   const [board, setBoard] = useState({
-    "To DO": [{id:'t1', text:"Task 1"}, {id:'t2', text:"Task 2"}],
+    "To DO": [
+      {id:'t1', text:"Task 1"}, 
+      {id:'t2', text:"Task 2"},
+    ],
     "In Progress": [{id:'t3', text:"Task 3"}],
     "Done": [{id:'t4', text:"Task 4"}],
   });
@@ -15,7 +18,7 @@ export default function App() {
   // NOTE: Utilizing "DragEvent API" for drag & drop 
   // e is React's SyntheticEvent wrapping Native Events.
 
-  // To store the dragged element info, while user drag a element
+  // Used to store the dragged element info, while user drag a element
   const handleDragStart = (e, task, fromCol) => {
     // stores string value(i.e, unique id or text) on drag operation.
     // stores the source column id/name to tell drop handler where the dragged element's from.
@@ -31,30 +34,58 @@ export default function App() {
   => Can call e.dataTransfer.setDragImage(node, x, y) for custom drag preview.
   */
 
-  // Used when dragged element is dropped on another column.
-  const handleDrop = (e, toCol) => {
+  // Used when dragged element is dropped on column.
+  const handleDrop = (e, toCol, targetTaskId = null) => {
     e.preventDefault();
+
+
     const raw = e.dataTransfer.getData("application/json");     // retrieve stored element identifier & source column
-    
     if(!raw) return;
 
     const { id, from } = JSON.parse(raw);
-    if(from === toCol) return;   // Don't allow drop if same column (NOTE: change it to allow reordering in future.)
+    if(!id) return;                                             // Don't allow drop if same id
 
+    // to update state based on previous value
     setBoard((prev) => {
-      // Create a shallow copy, so react sees new object reference & re-renders.
+      // Create a shallow copy(clone), so react sees new object reference & re-renders.
       const newBoard = { ...prev };
-      // find the element(task) by id
-      const task = newBoard[from].find((t) => t.id === id);
+
+      // Check if the task(dragged element) exists in target column
+      // If yes, then reordering case - remove task(element) first so it does not duplicate, then reinsert at later
+      // If no, then remove task(element) from its original column.
+      // Note: we remove using the id
+      if(newBoard[toCol].some((t) => t.id === id)){
+        newBoard[toCol] = newBoard[toCol].filter((t) => t.id !== id);
+      } else {
+        newBoard[from] = newBoard[from].filter((t) => t.id !== id);
+      }
+
+      // Get the dragged task(element) by id, looking in either source or target column
+      const task = prev[from].find((t) => t.id === id) || prev[toCol].find((t) => t.id === id);
+      // if not found, return the unchanged board(previous state).
       if (!task) return prev;
-      // remove element from old column by filtering out the dragged or moved one by id.
-      newBoard[from] = newBoard[from].filter((t) => t.id !== id);
-      // append it to new column(toCol)
-      newBoard[toCol] = [...newBoard[toCol], task];
-      return newBoard;
+      
+      // Inserting task into position
+      // If dropped on another task, insert dragged task before the task.
+      // If dropped on empty space in column, default - append at end.
+      if(targetTaskId) {
+        const targetIndex = newBoard[toCol].findIndex(
+          (t) => t.id === targetTaskId
+        );
+        // if not found (it shouldn't happen), append
+        if(targetIndex === -1){
+          newBoard[toCol] = [...newBoard[toCol], task];
+        } else {
+          newBoard[toCol].splice(targetIndex, 0, task);          // insert before target in the column
+        }
+      } else {
+        newBoard[toCol] = [...newBoard[toCol], task];            // default - append at end, while moving to new columns
+      }
+
+      return newBoard;                                           // new state result of board, re-render occurs.
     });
 
-    setDragOverCol(null);   // reset the highlight after drop
+    setDragOverCol(null);                                        // reset the highlight after drop
   };
 
   /*
@@ -78,7 +109,9 @@ export default function App() {
             className={`flex-1 rounded-2xl shadow-md p-4 transition-colors 
               ${dragOverCol === col ? "bg-blue-100" : "bg-white"}`}
             onDragOver={ (e) => e.preventDefault() }   // to allow dropping
-            onDrop={ (e) => handleDrop(e, col) }
+            onDrop={(e) => {
+              handleDrop(e, col);
+            }}
             onDragEnter={ () => setDragOverCol(col) }
             onDragLeave={ () => setDragOverCol(null)}>
             <h2 className='text-xl font-bold mb-4'>{col}</h2>
@@ -88,6 +121,11 @@ export default function App() {
                 draggable
                 key={task.id}
                 onDragStart={ (e) => handleDragStart(e, task, col) }
+                onDragOver={ (e) => e.preventDefault() }
+                onDrop={(e) => {
+                  e.stopPropagation();                        // prevent column onDrop
+                  handleDrop(e, col, task.id);                // reorder or insert before this task(element) id at hover end
+                }}           
                 className='p-3 mb-2 bg-blue-500 text-white rounded-lg shadow cursor-move'>
                 {task.text}
               </div>
