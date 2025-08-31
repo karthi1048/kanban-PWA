@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import AddTask from './components/AddTask';
 import './App.css'
 
 export default function App() {
@@ -37,7 +38,7 @@ export default function App() {
       "application/json", 
       JSON.stringify({ id: task.id, from: fromCol })
     );                       
-    e.dataTransfer.effectAllowed = "move";                // to hint it's a move operation.                 
+    e.dataTransfer.effectAllowed = "move";                            // to hint it's a move operation.                 
   };
 
   /*
@@ -93,16 +94,16 @@ export default function App() {
         if(targetIndex === -1){
           newBoard[toCol] = [...newBoard[toCol], task];
         } else {
-          newBoard[toCol].splice(targetIndex, 0, task);          // insert before target in the column
+          newBoard[toCol].splice(targetIndex, 0, task);                                     // insert before target in the column
         }
       } else {
-        newBoard[toCol] = [...newBoard[toCol], task];            // default - append at end, while moving to new columns
+        newBoard[toCol] = [...newBoard[toCol], task];                                       // default - append at end, while moving to new columns
       }
 
-      return newBoard;                                           // new state result of board, re-render occurs.
+      return newBoard;                                                                      // new state result of board, re-render occurs.
     });
 
-    setDragOverCol(null);                                        // reset the highlight after drop
+    setDragOverCol(null);                                                                   // reset the highlight after drop
   };
 
   /*
@@ -113,24 +114,24 @@ export default function App() {
 
   // Touch handlers
   const handleTouchStart = (task, fromCol) => {
-    touchTaskRef.current = { id: task.id, from: fromCol };                                  // store id & column as Reference as its current.
-    setGhostTask({ ...task, x:0, y:0 });
+    touchTaskRef.current = { id: task.id, from: fromCol };                                  // store id & column as Reference(to remember) as its current.
+    setGhostTask({ ...task, x:0, y:0 });                                                    // create ghost with values id, text ,x, y as values
   };
 
   const handleTouchEnd = (e) => {
-    // check if touchTaskRef store anything, if not rest ghostTask
+    // check if touchTaskRef store anything, if not rest ghostTask (GUARD)
     if(!touchTaskRef.current){
       setGhostTask(null);
       return;
     }
 
     // Get position when finger lifts.
-    const touch = e.changedTouches[0];                                                      // Gives the finger last position n screen
+    const touch = e.changedTouches[0];                                                      // Gives the finger last position on screen
     const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);          // returns DOM element directly under the finger position.
 
     // Find nearest column container(div), if not reset & stop
-    const colDiv = targetElement?.closest("[data-col]");                                     // from that task(element) climb the DOM tree, find the column with value "data-col"
-    if(!colDiv){
+    const colDiv = targetElement?.closest("[data-col]");                                    // from that task(element) climb the DOM tree, find the column with value "data-col"
+    if(!colDiv){ 
       touchTaskRef.current = null;
       setDragOverCol(null);
       setGhostTask(null);
@@ -145,19 +146,28 @@ export default function App() {
   };
 
   const handleTouchMove = (e) => {
-    const touch = e.touches[0];
+    const touch = e.touches[0];                                                             // gives current finger coordinates
     const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
     const colDiv = targetElement?.closest("[data-col]");
     if(colDiv) {
-      setDragOverCol(colDiv.getAttribute("data-col"));
+      setDragOverCol(colDiv.getAttribute("data-col"));                                      // gets which column is under finger
     } else {
       setDragOverCol(null);
     }
 
-    // move ghost with finger
+    // move the ghost to follow the finger every frame
     if(ghostTask) {
       setGhostTask((prev) => ({ ...prev, x: touch.clientX, y: touch.clientY }));
     }
+  };
+
+  // add new task to a column
+  // NOTE: uses now() for id, which gives milliseconds & text from input
+  const addTask = (col, text) => {
+    setBoard((prev) => ({
+      ...prev,
+      [col]: [...prev[col], { id: Date.now().toString(), text }],
+    }));
   };
 
   return (
@@ -200,12 +210,15 @@ export default function App() {
                 {task.text}
               </div>
             ))}
+            {/* AddTask below each input */}
+            <AddTask onAdd={ (text) => addTask(col, text)}/>
           </div>
         ))}
 
-        {/* Ghost task */}
+        {/* Conditional Ghost task */}
         { ghostTask && (
           <div
+            // "pointer-events-none => it never intercepts touches/clicks"
             className='fixed pointer-events-none bg-blue-500 text-white p-3 rounded-lg shadow-lg opacity-80'
             style={{
               top: ghostTask.y - 30 + "px",
