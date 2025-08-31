@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import AddTask from './components/AddTask';
+import Task from './components/Task';
 import './App.css'
 
 export default function App() {
@@ -161,14 +162,30 @@ export default function App() {
     }
   };
 
-  // add new task to a column
+  // CRUD handlers
+
+  // add new task to column
   // NOTE: uses now() for id, which gives milliseconds & text from input
-  const addTask = (col, text) => {
+  const handleAddTask = (col, text) => {
     setBoard((prev) => ({
       ...prev,
       [col]: [...prev[col], { id: Date.now().toString(), text }],
     }));
   };
+
+  const handleEditTask = (taskId, col, newText) => {
+    setBoard((prev) => ({
+      ...prev,
+      [col]: prev[col].map((t) => t.id === taskId ? { ...t, text: newText} : t),
+    }));
+  };
+
+  const handleDeleteTask = (taskId, col) => {
+    setBoard((prev) => ({
+      ...prev,
+      [col]: prev[col].filter((t) => t.id !== taskId),
+    }))
+  }
 
   return (
     <>
@@ -194,26 +211,22 @@ export default function App() {
             className={`flex-1 rounded-2xl shadow-md p-4 transition-colors 
               ${dragOverCol === col ? "bg-blue-100" : "bg-white"}`}>          
             <h2 className='text-xl font-bold mb-4'>{col}</h2>
+            {/* AddTask below each input */}
+            <AddTask onAdd={ (text) => handleAddTask(col, text) }/>
             {/* Similar to columns, return div for each task */}
             { tasks.map((task) => (
-              <div 
-                draggable
-                key={task.id}
-                onDragStart={ (e) => handleDragStart(e, task, col) }
-                onDragOver={ (e) => e.preventDefault() }
-                onDrop={(e) => {
-                  e.stopPropagation();                                // prevent column onDrop
-                  handleDrop(e, col, task.id);                        // reorder or insert before this task(element) id at hover end
-                }}
-                onTouchStart={ () => handleTouchStart(task, col) }    // pick the task
-                className='p-3 mb-2 bg-blue-500 text-white rounded-lg shadow cursor-move'>
-                {task.text}
-              </div>
-            ))}
-            {/* AddTask below each input */}
-            <AddTask onAdd={ (text) => addTask(col, text)}/>
+              <Task 
+                key={ task.id }
+                task={task}
+                col={col}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+                onDragStart={handleDragStart}
+                onTouchStart={handleTouchStart}
+                onDrop={handleDrop}/>
+            )) }
           </div>
-        ))}
+        )) }
 
         {/* Conditional Ghost task */}
         { ghostTask && (

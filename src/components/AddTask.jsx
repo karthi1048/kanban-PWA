@@ -11,7 +11,7 @@ export default function AddTask({ onAdd }) {
     };
 
     return (
-        <form onSubmit={ handleSubmit } className="flex mt-2">
+        <form onSubmit={ handleSubmit } className="flex my-2">
             <input 
                 type="text"
                 value={ value }
