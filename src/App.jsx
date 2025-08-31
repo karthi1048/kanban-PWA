@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css'
 
 export default function App() {
+
   // Load from localStorage if available, else use the defaults
   const [board, setBoard] = useState(() => {
     const saved = localStorage.getItem("board");
@@ -16,8 +17,8 @@ export default function App() {
   });
   // Column names: Array of tasks
 
-  // to track which column is being hovered
-  const [dragOverCol, setDragOverCol] = useState(null);
+  const [dragOverCol, setDragOverCol] = useState(null);               // to track which column is being hovered
+  const touchTaskRef = useRef(null);                                  // store dragged task during touch
 
   // Save to localStorage whenever board changes
   useEffect(() => {
@@ -43,17 +44,19 @@ export default function App() {
   => Can call e.dataTransfer.setDragImage(node, x, y) for custom drag preview.
   */
 
+  // Drop handler for touch or drag
   // Used when dragged element is dropped on column.
-  const handleDrop = (e, toCol, targetTaskId = null) => {
-    e.preventDefault();
+  const handleDrop = (e, toCol, targetTaskId = null, fromCol = null, taskId = null) => {
+    if(e) e.preventDefault();
 
-    const raw = e.dataTransfer.getData("application/json");     // retrieve stored element identifier & source column
-    if(!raw) return;
+    const payload = (
+      taskId && fromCol 
+        ? { id: taskId, from: fromCol }                               // from touch
+        : JSON.parse(e.dataTransfer.getData("application/json"))      // from mouse (drag)
+    );
+    // retrieves stored element identifier & source column
 
-    const { id, from } = JSON.parse(raw);
-    if(!id) return;                                             // Don't allow drop if same id
-
-    // to update state based on previous value
+    // To update state based on previous value
     setBoard((prev) => {
       // Create a shallow copy(clone), so react sees new object reference & re-renders.
       const newBoard = { ...prev };
@@ -62,14 +65,17 @@ export default function App() {
       // If yes, then reordering case - remove task(element) first so it does not duplicate, then reinsert at later
       // If no, then remove task(element) from its original column.
       // Note: we remove using the id
-      if(newBoard[toCol].some((t) => t.id === id)){
-        newBoard[toCol] = newBoard[toCol].filter((t) => t.id !== id);
+      if(newBoard[toCol].some((t) => t.id === payload.id)){
+        newBoard[toCol] = newBoard[toCol].filter((t) => t.id !== payload.id);
       } else {
-        newBoard[from] = newBoard[from].filter((t) => t.id !== id);
+        newBoard[payload.from] = newBoard[payload.from].filter((t) => t.id !== payload.id);
       }
 
       // Get the dragged task(element) by id, looking in either source or target column
-      const task = prev[from].find((t) => t.id === id) || prev[toCol].find((t) => t.id === id);
+      const task = (
+        prev[payload.from].find((t) => t.id === payload.id) || 
+        prev[toCol].find((t) => t.id === payload.id)
+      );
       // if not found, return the unchanged board(previous state).
       if (!task) return prev;
       
@@ -102,6 +108,31 @@ export default function App() {
   => dataTransfer.setData(type, data) API expects a "MIME type" as first argument. So using 'application/json' is just a convention to tell we are using structured JSON data(format) for sending & receiving.
   */
 
+  // Touch handlers
+  const handleTouchStart = (task, fromCol) => {
+    touchTaskRef.current = { id: task.id, from: fromCol };                                  // store id & column as Reference as its current.
+  };
+
+  const handleTouchEnd = (e) => {
+    if(!touchTaskRef.current) return;                                                       // check if touchTaskRef store anything, if not return nothing(do nothing)
+
+    // Get position when finger lifts.
+    const touch = e.changedTouches[0];                                                      // Gives the finger last position n screen
+    const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);          // returns DOM element directly under the finger position.
+
+    // Find nearest column container(div), if not reset & stop
+    const colDiv = targetElement.closest("[data-col]");                                     // from that task(element) climb the DOM tree, find the column with value "dat-col"
+    if(!colDiv){
+      touchTaskRef.current = null;                                                           
+      return;
+    }
+
+    const toCol = colDiv.getAttribute("data-col");                                          // Get the column name from that attribute.
+
+    handleDrop(null, toCol, null, touchTaskRef.current.from, touchTaskRef.current.id);      
+    touchTaskRef.current = null;                                                            // clear out the reference, to avoid trouble for next.
+  };
+
   return (
     <>
       {/* <h1 className='text-3xl m-4 font-bold'>Kanban</h1> */}
@@ -113,15 +144,17 @@ export default function App() {
           // Columns
           // we use 'conditional tailwind classes' to highlight columns, while element(task) hover.
           <div 
-            key={col} 
-            className={`flex-1 rounded-2xl shadow-md p-4 transition-colors 
-              ${dragOverCol === col ? "bg-blue-100" : "bg-white"}`}
-            onDragOver={ (e) => e.preventDefault() }   // to allow dropping
+            key={col}
+            data-col={col}                                    // mark column div
+            onDragOver={ (e) => e.preventDefault() }          // to allow dropping
             onDrop={(e) => {
               handleDrop(e, col);
             }}
             onDragEnter={ () => setDragOverCol(col) }
-            onDragLeave={ () => setDragOverCol(null)}>
+            onDragLeave={ () => setDragOverCol(null)}
+            onTouchEnd={ handleTouchEnd }                     // drop the column by global detection
+            className={`flex-1 rounded-2xl shadow-md p-4 transition-colors 
+              ${dragOverCol === col ? "bg-blue-100" : "bg-white"}`}>          
             <h2 className='text-xl font-bold mb-4'>{col}</h2>
             {/* Similar to columns, return div for each task */}
             { tasks.map((task) => (
@@ -131,9 +164,10 @@ export default function App() {
                 onDragStart={ (e) => handleDragStart(e, task, col) }
                 onDragOver={ (e) => e.preventDefault() }
                 onDrop={(e) => {
-                  e.stopPropagation();                        // prevent column onDrop
-                  handleDrop(e, col, task.id);                // reorder or insert before this task(element) id at hover end
-                }}           
+                  e.stopPropagation();                                // prevent column onDrop
+                  handleDrop(e, col, task.id);                        // reorder or insert before this task(element) id at hover end
+                }}
+                onTouchStart={ () => handleTouchStart(task, col) }    // pick the task
                 className='p-3 mb-2 bg-blue-500 text-white rounded-lg shadow cursor-move'>
                 {task.text}
               </div>
@@ -143,4 +177,4 @@ export default function App() {
       </div>
     </>
   )
-}
+};
