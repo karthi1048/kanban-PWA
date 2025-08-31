@@ -18,7 +18,8 @@ export default function App() {
   // Column names: Array of tasks
 
   const [dragOverCol, setDragOverCol] = useState(null);               // to track which column is being hovered
-  const touchTaskRef = useRef(null);                                  // store dragged task during touch
+  const touchTaskRef = useRef(null);                                  // store dragged task during 
+  const [ghostTask, setGhostTask] = useState(null);                   // temporary state used for touch
 
   // Save to localStorage whenever board changes
   useEffect(() => {
@@ -55,6 +56,8 @@ export default function App() {
         : JSON.parse(e.dataTransfer.getData("application/json"))      // from mouse (drag)
     );
     // retrieves stored element identifier & source column
+
+    if(!payload?.id) return;
 
     // To update state based on previous value
     setBoard((prev) => {
@@ -111,26 +114,50 @@ export default function App() {
   // Touch handlers
   const handleTouchStart = (task, fromCol) => {
     touchTaskRef.current = { id: task.id, from: fromCol };                                  // store id & column as Reference as its current.
+    setGhostTask({ ...task, x:0, y:0 });
   };
 
   const handleTouchEnd = (e) => {
-    if(!touchTaskRef.current) return;                                                       // check if touchTaskRef store anything, if not return nothing(do nothing)
+    // check if touchTaskRef store anything, if not rest ghostTask
+    if(!touchTaskRef.current){
+      setGhostTask(null);
+      return;
+    }
 
     // Get position when finger lifts.
     const touch = e.changedTouches[0];                                                      // Gives the finger last position n screen
     const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);          // returns DOM element directly under the finger position.
 
     // Find nearest column container(div), if not reset & stop
-    const colDiv = targetElement.closest("[data-col]");                                     // from that task(element) climb the DOM tree, find the column with value "dat-col"
+    const colDiv = targetElement?.closest("[data-col]");                                     // from that task(element) climb the DOM tree, find the column with value "data-col"
     if(!colDiv){
-      touchTaskRef.current = null;                                                           
+      touchTaskRef.current = null;
+      setDragOverCol(null);
+      setGhostTask(null);
       return;
     }
-
     const toCol = colDiv.getAttribute("data-col");                                          // Get the column name from that attribute.
 
     handleDrop(null, toCol, null, touchTaskRef.current.from, touchTaskRef.current.id);      
     touchTaskRef.current = null;                                                            // clear out the reference, to avoid trouble for next.
+    setDragOverCol(null);
+    setGhostTask(null);                                                                     // remove ghost
+  };
+
+  const handleTouchMove = (e) => {
+    const touch = e.touches[0];
+    const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+    const colDiv = targetElement?.closest("[data-col]");
+    if(colDiv) {
+      setDragOverCol(colDiv.getAttribute("data-col"));
+    } else {
+      setDragOverCol(null);
+    }
+
+    // move ghost with finger
+    if(ghostTask) {
+      setGhostTask((prev) => ({ ...prev, x: touch.clientX, y: touch.clientY }));
+    }
   };
 
   return (
@@ -152,6 +179,7 @@ export default function App() {
             }}
             onDragEnter={ () => setDragOverCol(col) }
             onDragLeave={ () => setDragOverCol(null)}
+            onTouchMove={ handleTouchMove }                   // highlight column on touch & ghost move
             onTouchEnd={ handleTouchEnd }                     // drop the column by global detection
             className={`flex-1 rounded-2xl shadow-md p-4 transition-colors 
               ${dragOverCol === col ? "bg-blue-100" : "bg-white"}`}>          
@@ -174,6 +202,18 @@ export default function App() {
             ))}
           </div>
         ))}
+
+        {/* Ghost task */}
+        { ghostTask && (
+          <div
+            className='fixed pointer-events-none bg-blue-500 text-white p-3 rounded-lg shadow-lg opacity-80'
+            style={{
+              top: ghostTask.y - 30 + "px",
+              left: ghostTask.x - 60 + "px",
+            }}>
+            { ghostTask.text }
+          </div>
+        )}
       </div>
     </>
   )
