@@ -1,15 +1,22 @@
 import { useState } from "react";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouchStart, onDrop }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(task.text);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const handleSave = () => {
-        if(editText.trim() !== ""){
+        if(editText.trim() !== "") {
             onEdit(task.id, col, editText.trim());
             setIsEditing(false);
         }
     };
+    
+    const handleCancel = () => {
+        setEditText(task.text);                                    // reset back to original text
+        setIsEditing(false);                                       // exit editing
+    }
 
     return (
         <div
@@ -30,9 +37,14 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                     value={ editText }
                     onChange={ (e) => setEditText(e.target.value) }/>
                     <button
-                        className="bg-green-600 px-2 rounded"
+                        className="bg-green-400 px-2 rounded hover:bg-green-600"
                         onClick={ handleSave }>
                         Save
+                    </button>
+                    <button
+                        className="bg-gray-400 px-2 rounded hover:bg-gray-600"
+                        onClick={ handleCancel }>
+                        Cancel
                     </button>
                 </div>
             ) : (
@@ -46,10 +58,18 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                         </button>
                         <button
                             className="bg-red-600 px-2 rounded"
-                            onClick={ () => onDelete(task.id, col) }>
+                            onClick={ () => setShowConfirm(true) }>
                             Delete
                         </button>
                     </div>
+                    { showConfirm && (
+                        <ConfirmDeleteModal 
+                            onConfirm={() => {
+                                onDelete(task.id, col);
+                                setShowConfirm(false);
+                            }}
+                            onCancel={ () => setShowConfirm(false) }/>
+                    )}
                 </>
             )}
         </div>
