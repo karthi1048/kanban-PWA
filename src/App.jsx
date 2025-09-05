@@ -188,11 +188,11 @@ export default function App() {
   }
 
   return (
-    <>
-      {/* <h1 className='text-3xl m-4 font-bold'>Kanban</h1> */}
+    <div className='flex flex-col h-screen'>
+      <h1 className='text-3xl m-4 font-semibold text-center'>Kanban</h1>
 
       {/* Board */}
-      <div className='flex h-screen bg-gray-100 p-6 gap-6'>
+      <div className='flex flex-col md:flex-row h-screen bg-gray-100 p-4 md:p-6 gap-6'>
         {/* Get [key, value], destructure as [col, tasks] & return div for each column*/}
         { Object.entries(board).map(([col, tasks]) => (
           // Columns
@@ -208,8 +208,9 @@ export default function App() {
             onDragLeave={ () => setDragOverCol(null)}
             onTouchMove={ handleTouchMove }                   // highlight column on touch & ghost move
             onTouchEnd={ handleTouchEnd }                     // drop the column by global detection
-            className={`flex-1 rounded-2xl shadow-md p-4 transition-colors 
-              ${dragOverCol === col ? "bg-blue-100" : "bg-white"}`}>          
+            className={`flex-1 rounded-2xl shadow-md p-4 transition-colors max-h-[80vh] overflow-y-auto
+              ${dragOverCol === col ? "bg-blue-100" : "bg-white"}`}>
+            {/* Due to "overflow-y-auto" each column will have independent scrolls, when tasks overflow their column div site */}
             <h2 className='text-xl font-bold mb-4'>{col}</h2>
             {/* AddTask below each input */}
             <AddTask onAdd={ (text) => handleAddTask(col, text) }/>
@@ -241,6 +242,6 @@ export default function App() {
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 };

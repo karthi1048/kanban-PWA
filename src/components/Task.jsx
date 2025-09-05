@@ -31,9 +31,9 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
             onTouchStart={ () => onTouchStart(task, col) }          // pick the task
             className="p-3 mb-2 bg-blue-500 text-white rounded-lg shadow cursor-move flex justify-between items-center">
             { isEditing ? (
-                <div className="flex gap-2 w-full">
+                <div className="flex gap-2">
                     <input
-                    className="flex-1 px-2 rounded text-black"
+                    className="flex-1 px-2 rounded text-white w-full"
                     value={ editText }
                     onChange={ (e) => setEditText(e.target.value) }/>
                     <button
@@ -52,12 +52,12 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                     <span>{ task.text }</span>
                     <div className="flex gap-2 ml-2">
                         <button
-                            className="bg-yellow-500 px-2 rounded"
+                            className="bg-yellow-500 px-2 rounded hover:bg-yellow-700"
                             onClick={ () => setIsEditing(true) }>
                             Edit
                         </button>
                         <button
-                            className="bg-red-600 px-2 rounded"
+                            className="bg-red-600 px-2 rounded hover:bg-red-700"
                             onClick={ () => setShowConfirm(true) }>
                             Delete
                         </button>
