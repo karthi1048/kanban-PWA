@@ -166,17 +166,18 @@ export default function App() {
 
   // add new task to column
   // NOTE: uses now() for id, which gives milliseconds & text from input
-  const handleAddTask = (col, text) => {
+  const handleAddTask = (col, text, priority) => {
+    const newTask = { id: Date.now().toString(), text, priority }
     setBoard((prev) => ({
       ...prev,
-      [col]: [...prev[col], { id: Date.now().toString(), text }],
+      [col]: [...prev[col], newTask],
     }));
   };
 
-  const handleEditTask = (taskId, col, newText) => {
+  const handleEditTask = (taskId, col, newText, newPriority) => {
     setBoard((prev) => ({
       ...prev,
-      [col]: prev[col].map((t) => t.id === taskId ? { ...t, text: newText} : t),
+      [col]: prev[col].map((t) => t.id === taskId ? { ...t, text: newText, priority: newPriority } : t),
     }));
   };
 
@@ -213,7 +214,7 @@ export default function App() {
             {/* Due to "overflow-y-auto" each column will have independent scrolls, when tasks overflow their column div site */}
             <h2 className='text-xl font-bold mb-4'>{col}</h2>
             {/* AddTask below each input */}
-            <AddTask onAdd={ (text) => handleAddTask(col, text) }/>
+            <AddTask onAdd={ (text, priority) => handleAddTask(col, text, priority) }/>
             {/* Similar to columns, return div for each task */}
             { tasks.map((task) => (
               <Task 
