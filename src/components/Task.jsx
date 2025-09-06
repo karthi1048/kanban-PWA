@@ -6,6 +6,7 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
     const [editText, setEditText] = useState(task.text);
     const [editPriority, setEditPriority] = useState(task.priority || "medium");
     const [showConfirm, setShowConfirm] = useState(false);
+    const [expanded, setExpanded] = useState(false);
 
     const handleSave = () => {
         if(editText.trim() !== "") {
@@ -35,7 +36,7 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
             { isEditing ? (
                 <div className="flex flex-col space-x-2">
                     <input
-                        className="px-2 py-1 rounded text-white mb-2"
+                        className="px-2 py-1 rounded border text-white mb-2"
                         value={ editText }
                         onChange={ (e) => setEditText(e.target.value) }/>
                     <select 
@@ -61,7 +62,45 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                 </div>
             ) : (
                 <div className="flex flex-col">
-                    <span className="mb-2">{ task.text }</span>
+                    {/* Task text */}
+                    <span 
+                        className="mb-4 rounded border p-2 cursor-pointer"
+                        title={ task.text }                                                 // shows tooltip(tasks content) on hover
+                        onClick={ () => setExpanded(!expanded) }
+                        onDoubleClick={ () => setIsEditing(true) }>
+                        {/* on click show full text or reduce it to 50 characters */}
+                        { expanded
+                            ? task.text
+                            : task.text.length > 50
+                            ? task.text.slice(0,50) + "..."
+                            : task.text }
+                    </span>
+                    {/* Timestamps */}
+                    {/* toLocaleString() uses browser's locale settings, so we use some options foe custom value */}
+                    { task.createdAt && (
+                        <span className="text-xs text-black mb-2">
+                            "Created":{" "} 
+                            { new Date(task.createdAt).toLocaleString([], {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                            }) }
+                            { task.updatedAt && (
+                                <span>
+                                    {" "}| "Edited":{" "} 
+                                    { new Date(task.updatedAt).toLocaleString([], {
+                                        year: "numeric",
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    }) }
+                                </span>
+                            ) }
+                        </span>
+                    ) }
                     <div className="flex items-center space-x-2">
                         { task.priority && (
                             <span
@@ -76,7 +115,7 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                             </span>
                         ) }
                         <button
-                            className="bg-yellow-500 px-2 rounded text-sm hover:bg-yellow-700"
+                            className="bg-yellow-500 px-2 rounded hover:bg-yellow-700"
                             onClick={ () => setIsEditing(true) }>
                             Edit
                         </button>
