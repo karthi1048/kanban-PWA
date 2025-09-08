@@ -36,7 +36,9 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
             { isEditing ? (
                 <div className="flex flex-col space-x-2">
                     <input
-                        className="px-2 py-1 rounded border text-white mb-2"
+                        className={`border mb-2 p-2 rounded-lg shadow-sm focus:outline-none w-full
+                                    focus:ring-2 focus:ring-red-400 focus:border-red-400 transition`}
+                        // className="px-2 py-1 rounded border text-white mb-2"
                         value={ editText }
                         onChange={ (e) => setEditText(e.target.value) }/>
                     <select 
@@ -120,7 +122,7 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                             Edit
                         </button>
                         <button
-                            className="bg-red-600 px-2 rounded text-sm hover:bg-red-700"
+                            className="bg-red-600 px-2 rounded hover:bg-red-700"
                             onClick={ () => setShowConfirm(true) }>
                             Delete
                         </button>

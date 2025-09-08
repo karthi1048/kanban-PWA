@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import AddTask from './components/AddTask';
 import Task from './components/Task';
+import SearchTaskBar from './components/SearchTaskBar';
 import './App.css'
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
   const [dragOverCol, setDragOverCol] = useState(null);               // to track which column is being hovered
   const touchTaskRef = useRef(null);                                  // store dragged task during 
   const [ghostTask, setGhostTask] = useState(null);                   // temporary state used for touch
+  const [searchQuery, setSearchQuery] = useState("");                 // for searching tasks
 
   // Save to localStorage whenever board changes
   useEffect(() => {
@@ -193,6 +195,8 @@ export default function App() {
   return (
     <div className='flex flex-col h-screen'>
       <h1 className='text-3xl m-4 font-semibold text-center'>Kanban</h1>
+      {/* Search Box */}
+      <SearchTaskBar searchQuery={ searchQuery } setSearchQuery={ setSearchQuery }/>
 
       {/* Board */}
       <div className='flex flex-col md:flex-row h-screen bg-gray-100 p-4 md:p-6 gap-6'>
@@ -218,7 +222,12 @@ export default function App() {
             {/* AddTask below each input */}
             <AddTask onAdd={ (text, priority) => handleAddTask(col, text, priority) }/>
             {/* Similar to columns, return div for each task */}
-            { tasks.map((task) => (
+            { tasks
+              .filter((task) => (
+                task.text.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                (task.priority && task.priority.toLowerCase().includes(searchQuery.toLowerCase()))
+              ))
+              .map((task) => (
               <Task 
                 key={ task.id }
                 task={task}
@@ -229,6 +238,7 @@ export default function App() {
                 onTouchStart={handleTouchStart}
                 onDrop={handleDrop}/>
             )) }
+            {/* NOTE: map() is used to return the tasks in board, filter() is used to get filtered tasks on board by searchQuery */}
           </div>
         )) }
 

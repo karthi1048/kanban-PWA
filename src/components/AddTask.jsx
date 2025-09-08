@@ -19,14 +19,16 @@ export default function AddTask({ onAdd }) {
     };
 
     return (
-        <form onSubmit={ handleSubmit } className="flex my-2">
+        <form onSubmit={ handleSubmit } className="flex my-4">
             <input 
                 type="text"
                 ref={ inputRef }
                 value={ value }
                 onChange={ (e) => setValue(e.target.value) }
                 placeholder="New task..."
-                className="flex-1 border rounded-lg p-2 text-sm"/>
+                className={`border text-sm p-2 rounded-lg shadow-sm focus:outline-none w-full
+                            focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition`}
+                />
             <select 
                 value={ priority } 
                 onChange={ (e) => setPriority(e.target.value) }
