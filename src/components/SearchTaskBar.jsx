@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 
 export default function SearchTaskBar({ searchQuery, setSearchQuery }) {
-
     const [localQuery, setLocalQuery] = useState(searchQuery);
 
     useEffect(() => {

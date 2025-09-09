@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import AddTask from './components/AddTask';
-import Task from './components/Task';
 import SearchTaskBar from './components/SearchTaskBar';
+import Column from './components/Column';
 import './App.css'
 
 export default function App() {
@@ -20,15 +19,26 @@ export default function App() {
   });
   // Column names: Array of tasks
 
-  const [dragOverCol, setDragOverCol] = useState(null);               // to track which column is being hovered
-  const touchTaskRef = useRef(null);                                  // store dragged task during 
-  const [ghostTask, setGhostTask] = useState(null);                   // temporary state used for touch
-  const [searchQuery, setSearchQuery] = useState("");                 // for searching tasks
-
   // Save to localStorage whenever board changes
   useEffect(() => {
     localStorage.setItem("board", JSON.stringify(board));
   }, [board]);
+
+  // For sorting
+  const [sortOrders, setSortOrders] = useState(() => {
+    const saved = localStorage.getItem("sortOrders");
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  // store current sorting order in localStorage
+  useEffect(() => {
+    localStorage.setItem("sortOrders", JSON.stringify(sortOrders));
+  }, [sortOrders]);
+
+  const [dragOverCol, setDragOverCol] = useState(null);               // to track which column is being hovered
+  const touchTaskRef = useRef(null);                                  // store dragged task during 
+  const [ghostTask, setGhostTask] = useState(null);                   // temporary state used for touch
+  const [searchQuery, setSearchQuery] = useState("");                 // for searching tasks
   
   // NOTE: Utilizing "DragEvent API" for drag & drop 
   // e is React's SyntheticEvent wrapping Native Events.
@@ -167,8 +177,7 @@ export default function App() {
   // CRUD handlers
 
   // add new task to column
-  // NOTE: uses now() for id, which gives milliseconds & text from input
-  // but for createdAt, now() will be used as timestamp
+  // NOTE: uses now() for id, which gives milliseconds & text from input but for createdAt, now() will be used as timestamp
   // Timestamp will also be created for edited tasks
   const handleAddTask = (col, text, priority) => {
     const newTask = { id: Date.now().toString(), text, priority, createdAt: Date.now() };
@@ -203,43 +212,25 @@ export default function App() {
         {/* Get [key, value], destructure as [col, tasks] & return div for each column*/}
         { Object.entries(board).map(([col, tasks]) => (
           // Columns
-          // we use 'conditional tailwind classes' to highlight columns, while element(task) hover.
-          <div 
+          <Column
             key={col}
-            data-col={col}                                    // mark column div
-            onDragOver={ (e) => e.preventDefault() }          // to allow dropping
-            onDrop={(e) => {
-              handleDrop(e, col);
-            }}
-            onDragEnter={ () => setDragOverCol(col) }
-            onDragLeave={ () => setDragOverCol(null)}
-            onTouchMove={ handleTouchMove }                   // highlight column on touch & ghost move
-            onTouchEnd={ handleTouchEnd }                     // drop the column by global detection
-            className={`flex-1 rounded-2xl shadow-md p-4 transition-colors max-h-[80vh] overflow-y-auto
-              ${dragOverCol === col ? "bg-blue-100" : "bg-white"}`}>
-            {/* Due to "overflow-y-auto" each column will have independent scrolls, when tasks overflow their column div site */}
-            <h2 className='text-xl font-bold mb-4'>{col}</h2>
-            {/* AddTask below each input */}
-            <AddTask onAdd={ (text, priority) => handleAddTask(col, text, priority) }/>
-            {/* Similar to columns, return div for each task */}
-            { tasks
-              .filter((task) => (
-                task.text.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                (task.priority && task.priority.toLowerCase().includes(searchQuery.toLowerCase()))
-              ))
-              .map((task) => (
-              <Task 
-                key={ task.id }
-                task={task}
-                col={col}
-                onEdit={handleEditTask}
-                onDelete={handleDeleteTask}
-                onDragStart={handleDragStart}
-                onTouchStart={handleTouchStart}
-                onDrop={handleDrop}/>
-            )) }
-            {/* NOTE: map() is used to return the tasks in board, filter() is used to get filtered tasks on board by searchQuery */}
-          </div>
+            col={col}
+            tasks={tasks}
+            dragOverCol={dragOverCol}
+            setDragOverCol={setDragOverCol}
+            handleDrop={handleDrop}
+            handleTouchMove={handleTouchMove}
+            handleTouchEnd={handleTouchEnd}
+            handleDragStart={handleDragStart}
+            handleTouchStart={handleTouchStart}
+            handleAddTask={handleAddTask}
+            handleEditTask={handleEditTask}
+            handleDeleteTask={handleDeleteTask}
+            searchQuery={searchQuery}
+            sortOrder={ sortOrders[col] || "default" }
+            setSortOrder={(order) => {
+              setSortOrders((prev) => ({ ...prev, [col]: order }));
+            }}/>
         )) }
 
         {/* Conditional Ghost task */}
