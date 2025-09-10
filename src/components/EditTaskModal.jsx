@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 export default function EditTaskModal({ initialText="", initialPriority="medium", isOpen, onSave, onCancel }) {
     const [text, setText] = useState(initialText);
     const [priority, setPriority] = useState(initialPriority);             // for changing the priority of tasks
-    const modelRef = useRef(null);
+    // const modelRef = useRef(null);
 
     // To keep input synced when opening modal for different tasks
     useEffect(() => {
@@ -16,7 +17,7 @@ export default function EditTaskModal({ initialText="", initialPriority="medium"
 
         const onKey = (e) => {
             if(e.key === "Escape") onCancel();
-            if(e.key === "Enter"){
+            if(e.key === "Enter" && !e.shiftKey){
                 e.preventDefault();
                 if(text.trim()) onSave(text.trim(), priority);
             }
@@ -28,23 +29,25 @@ export default function EditTaskModal({ initialText="", initialPriority="medium"
 
     if(!isOpen) return null;                          // if modal is not open return null
 
-    return (
+    const modal = (
         <div
-            ref={ modelRef }
-            onClick={ (e) => e.stopPropagation() }
-            draggable={ false }                          // to block accidental drag
-            className="fixed inset-0 flex items-center justify-center z-10 select-none cursor-default">
+            // ref={ modelRef }
+            className="fixed inset-0 flex items-center justify-center z-10" role="dialog" aria-modal="true">
             {/* Modal Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50"
                 onClick={ onCancel }
+                onDragStart={ (e) => { e.preventDefault(); e.stopPropagation(); } }
                 draggable={ false }
                 aria-hidden="true">
             </div>
             {/* Modal content */}
             <div
-                onClick={ (e) => e.stopPropagation() } // prevent backdrop close
-                className="relative bg-white text-black p-6 rounded-xl shadow-xl max-w-md w-full">
+                onClick={ (e) => e.stopPropagation() } // prevent backdrop
+                draggable={ false }
+                onDragStart={ (e) => { e.preventDefault(); e.stopPropagation(); } }
+                className="relative bg-white text-black p-6 rounded-xl shadow-xl max-w-md w-full"
+                style={{ cursor:"default", userSelect:"auto" }}>
                     <h2 className="text-lg font-semibold mb-3">Edit Task</h2>
                     <textarea
                         autoFocus
@@ -88,5 +91,9 @@ export default function EditTaskModal({ initialText="", initialPriority="medium"
                 />
              */}
         </div>
-    )
+    );
+
+    return createPortal(modal, document.body);
 }
+// Using React portal, we are moving modal outside the "div with id"(created for <App/> jsx element) into the body directly.
+// So this will separate its attachment with draggable components, thus avoiding dragging of modal.
