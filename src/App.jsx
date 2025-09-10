@@ -39,6 +39,30 @@ export default function App() {
   const touchTaskRef = useRef(null);                                  // store dragged task during 
   const [ghostTask, setGhostTask] = useState(null);                   // temporary state used for touch
   const [searchQuery, setSearchQuery] = useState("");                 // for searching tasks
+  const [timeTrigger, setTimeTrigger] = useState(Date.now())          // to update UI automatically
+
+  // To render once every day, automatically
+  useEffect(() => {
+    let timeout;
+
+    const scheduleNextMidnight = () => {
+      const now = new Date();
+      const nextMidnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,     // tomorrow's date
+        0, 0, 0, 0             // 00:00:00.000
+      );
+      const msUntilMidnight = nextMidnight - now;        // how many ms(minutes) until that midnight
+
+      timeout = setTimeout(() => {
+        setTimeTrigger(Date.now());                      // update state, triggers re-render
+        scheduleNextMidnight();                          // reschedule again for the next midnight 
+      }, msUntilMidnight);
+    };
+    scheduleNextMidnight();                              // call again
+    return () => clearTimeout(timeout);                  // cleanup timeout when component unmounts
+  }, []);
   
   // NOTE: Utilizing "DragEvent API" for drag & drop 
   // e is React's SyntheticEvent wrapping Native Events.
@@ -179,18 +203,18 @@ export default function App() {
   // add new task to column
   // NOTE: uses now() for id, which gives milliseconds & text from input but for createdAt, now() will be used as timestamp
   // Timestamp will also be created for edited tasks
-  const handleAddTask = (col, text, priority) => {
-    const newTask = { id: Date.now().toString(), text, priority, createdAt: Date.now() };
+  const handleAddTask = (col, text, priority, dueDate) => {
+    const newTask = { id: Date.now().toString(), text, priority, dueDate, createdAt: Date.now() };
     setBoard((prev) => ({
       ...prev,
       [col]: [...prev[col], newTask],
     }));
   };
 
-  const handleEditTask = (taskId, col, newText, newPriority) => {
+  const handleEditTask = (taskId, col, newText, newPriority, newDueDate) => {
     setBoard((prev) => ({
       ...prev,
-      [col]: prev[col].map((t) => t.id === taskId ? { ...t, text: newText, priority: newPriority, updatedAt: Date.now() } : t),
+      [col]: prev[col].map((t) => t.id === taskId ? { ...t, text:newText, priority:newPriority, dueDate:newDueDate, updatedAt:Date.now() } : t),
     }));
   };
 
@@ -216,6 +240,7 @@ export default function App() {
             key={col}
             col={col}
             tasks={tasks}
+            timeTrigger={timeTrigger}
             dragOverCol={dragOverCol}
             setDragOverCol={setDragOverCol}
             handleDrop={handleDrop}

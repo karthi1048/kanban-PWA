@@ -1,31 +1,34 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-export default function EditTaskModal({ initialText="", initialPriority="medium", isOpen, onSave, onCancel }) {
+export default function EditTaskModal({ initialText="", initialPriority="medium", initialDueDate="", isOpen, onSave, onCancel }) {
     const [text, setText] = useState(initialText);
     const [priority, setPriority] = useState(initialPriority);             // for changing the priority of tasks
+    const [dueDate, setDueDate] = useState(initialDueDate || "");
     // const modelRef = useRef(null);
 
     // To keep input synced when opening modal for different tasks
     useEffect(() => {
         setText(initialText);
         setPriority(initialPriority);
-    }, [initialText, initialPriority]);
+        setDueDate(initialDueDate);
+    }, [initialText, initialPriority, initialDueDate]);
 
     useEffect(() => {
         if(!isOpen) return;
-
+        
+        // Checking keyboard shortcut & giving results for Save and Cancel
         const onKey = (e) => {
             if(e.key === "Escape") onCancel();
             if(e.key === "Enter" && !e.shiftKey){
                 e.preventDefault();
-                if(text.trim()) onSave(text.trim(), priority);
+                if(text.trim()) onSave(text.trim(), priority, dueDate || "");
             }
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
 
-    }, [isOpen, text, priority, onSave, onCancel]);
+    }, [isOpen, text, priority, dueDate, onSave, onCancel]);
 
     if(!isOpen) return null;                          // if modal is not open return null
 
@@ -49,11 +52,11 @@ export default function EditTaskModal({ initialText="", initialPriority="medium"
                 className="relative bg-white text-black p-6 rounded-xl shadow-xl max-w-md w-full"
                 style={{ cursor:"default", userSelect:"auto" }}>
                     <h2 className="text-lg font-semibold mb-3">Edit Task</h2>
+                    {/* Task text */}
                     <textarea
                         autoFocus
                         value={text}
                         onChange={ (e) => setText(e.target.value) }
-                        placeholder="Edit Task Text..."
                         className="w-full border rounded p-2 mb-3 text-sm resize-y min-h-[64px]"
                     />
                     {/* Priority selection */}
@@ -66,6 +69,13 @@ export default function EditTaskModal({ initialText="", initialPriority="medium"
                         <option value="medium">Medium</option>
                         <option value="high">High</option>
                     </select>
+                    {/* Due Date */}
+                    <label className="block text-sm font-medium mb-1">Due Date</label>
+                    <input 
+                        type="date"
+                        value={ dueDate }
+                        onChange={ (e) => setDueDate(e.target.value) }
+                        className="border rounded px-2 py-1"/>
                     {/* Buttons */}
                     <div className="flex justify-end gap-2">
                         <button
@@ -73,7 +83,7 @@ export default function EditTaskModal({ initialText="", initialPriority="medium"
                             className="bg-green-400 p-2 rounded text-sm hover:bg-green-600"
                             onClick={() => {
                                 if(!text.trim()) return;
-                                onSave(text.trim(), priority);
+                                onSave(text.trim(), priority, dueDate || "");
                             } }>
                             Save
                         </button>

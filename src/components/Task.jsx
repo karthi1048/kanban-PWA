@@ -2,14 +2,14 @@ import { useState } from "react";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import EditTaskModal from "./EditTaskModal";
 
-export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouchStart, onDrop }) {
+export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouchStart, onDrop, timeTrigger }) {
     const [showConfirm, setShowConfirm] = useState(false);                        // for delete modal
     const [showEditModal, setShowEditModal] = useState(false);                    // for edit task modal
     const [expanded, setExpanded] = useState(false);                              // for toggling task text visibility
 
     // Used when modal saves new values
-    const handleSaveFromModal = (newText, newPriority) => {
-        onEdit(task.id, col, newText, newPriority);
+    const handleSaveFromModal = (newText, newPriority, newDueDate) => {
+        onEdit(task.id, col, newText, newPriority, newDueDate);
         setShowEditModal(false);
     }
     
@@ -40,6 +40,19 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                     ? task.text.slice(0,50) + "..."
                     : task.text }
             </span>
+            {/* Show Due date if available */}
+            { task.dueDate && (
+                <p 
+                    className={`text-sm m-1 ${
+                        new Date(task.dueDate) < new Date().setHours(0,0,0,0)
+                        ? "text-red-700 bg-red-200 font-medium"                                 // overdue
+                        : new Date(task.dueDate).toDateString() === new Date().toDateString()
+                        ? "text-yellow-700 bg-yellow-200 font-medium"                           // due today
+                        : "text-black bg-gray-200 font-medium"
+                    }`}>
+                    Due: { new Date(task.dueDate).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric", }) }
+                </p>
+            ) }
             {/* Timestamps */}
             <div className="py-2">
                 {/* toLocaleString() uses browser's locale settings, so we use some options foe custom value */}
@@ -101,6 +114,7 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                 isOpen={ showEditModal }
                 initialText={ task.text }
                 initialPriority={ task.priority }
+                initialDueDate= { task.dueDate }
                 onSave={ handleSaveFromModal }
                 onCancel={ () => setShowEditModal(false) }
             />
