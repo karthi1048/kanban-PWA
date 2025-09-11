@@ -22,6 +22,8 @@ export default function Column({
     // sort props
     sortOrder,
     setSortOrder,
+    // trigger
+    timeTrigger,
 }) {
 
     const query = (searchQuery || "").trim().toLowerCase();                  // input from search bar
@@ -97,6 +99,7 @@ export default function Column({
                         key={ task.id }
                         task={task}
                         col={col}
+                        timeTrigger={timeTrigger}
                         onEdit={handleEditTask}
                         onDelete={handleDeleteTask}
                         onDragStart={handleDragStart}

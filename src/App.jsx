@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import SearchTaskBar from './components/SearchTaskBar';
 import Column from './components/Column';
+import Toast from './components/Toast';
 import './App.css'
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
   const [ghostTask, setGhostTask] = useState(null);                   // temporary state used for touch
   const [searchQuery, setSearchQuery] = useState("");                 // for searching tasks
   const [timeTrigger, setTimeTrigger] = useState(Date.now())          // to update UI automatically
+  const [toast, setToast] = useState(null);                           // temp state to store deleted tasks
 
   // To render once every day, automatically
   useEffect(() => {
@@ -219,11 +221,34 @@ export default function App() {
   };
 
   const handleDeleteTask = (taskId, col) => {
+    const taskToDelete = board[col].find((t) => t.id === taskId);
+    if(!taskToDelete) return;
+
+    // Remove immediately from state
     setBoard((prev) => ({
       ...prev,
       [col]: prev[col].filter((t) => t.id !== taskId),
-    }))
-  }
+    }));
+
+    // Show toast with undo option
+    setToast({
+      message: "Task deleted",
+      actionLabel: "Undo",
+      task: taskToDelete,
+      col,
+    });
+  };
+
+  // Undo handler
+  const handleUndo = () => {
+    if(!toast) return;
+
+    setBoard((prev) => ({
+      ...prev,
+      [toast.col]: [...prev[toast.col], toast.task],
+    }));
+    setToast(null);
+  };
 
   return (
     <div className='flex flex-col h-screen'>
@@ -257,6 +282,15 @@ export default function App() {
               setSortOrders((prev) => ({ ...prev, [col]: order }));
             }}/>
         )) }
+
+        {/* Toast */}
+        { toast && (
+          <Toast
+            message={toast.message}
+            actionLabel={toast.actionLabel}
+            onAction={handleUndo}
+            onClose={ () => setToast(null) }/>
+        )}
 
         {/* Conditional Ghost task */}
         { ghostTask && (

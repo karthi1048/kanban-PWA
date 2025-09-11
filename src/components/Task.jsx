@@ -2,7 +2,7 @@ import { useState } from "react";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import EditTaskModal from "./EditTaskModal";
 
-export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouchStart, onDrop, timeTrigger }) {
+export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouchStart, onDrop }) {
     const [showConfirm, setShowConfirm] = useState(false);                        // for delete modal
     const [showEditModal, setShowEditModal] = useState(false);                    // for edit task modal
     const [expanded, setExpanded] = useState(false);                              // for toggling task text visibility
@@ -123,7 +123,7 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
             { showConfirm && (
                 <ConfirmDeleteModal 
                     onConfirm={() => {
-                        onDelete(task.id, col);
+                        onDelete(task.id, col);                       // handleDeleteTask
                         setShowConfirm(false);
                     }}
                     onCancel={ () => setShowConfirm(false) }/>
