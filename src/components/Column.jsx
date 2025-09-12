@@ -90,7 +90,7 @@ export default function Column({
             </div>
 
             {/* AddTask below each input */}
-            <AddTask onAdd={ (text, priority, dueDate) => handleAddTask(col, text, priority, dueDate) }/>
+            <AddTask onAdd={ (text, priority, dueDate, tag) => handleAddTask(col, text, priority, dueDate, tag) }/>
             
             {/* Similar to columns, return div for each task */}
             <div className="mt-3 space-y-2">

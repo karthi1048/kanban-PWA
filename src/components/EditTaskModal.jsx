@@ -1,18 +1,36 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-export default function EditTaskModal({ initialText="", initialPriority="medium", initialDueDate="", isOpen, onSave, onCancel }) {
+export default function EditTaskModal({ 
+    initialText="", 
+    initialPriority="medium", 
+    initialDueDate="",
+    initialTags = [],
+    isOpen, 
+    onSave, 
+    onCancel,
+}) {
+    
     const [text, setText] = useState(initialText);
     const [priority, setPriority] = useState(initialPriority);             // for changing the priority of tasks
     const [dueDate, setDueDate] = useState(initialDueDate || "");
+    const [tags, setTags] = useState(initialTags);
+    const [customTag, setCustomTag] = useState("");
+    const [customColor, setCustomColor] = useState("#3b82f6");         // default color = blue
     // const modelRef = useRef(null);
+
+    const predefinedTags = [
+        { label: "Bugs", color: "#ef4444" },              // red
+        { label: "Feature", color: "#22c55e" },           // green
+    ];
 
     // To keep input synced when opening modal for different tasks
     useEffect(() => {
         setText(initialText);
         setPriority(initialPriority);
         setDueDate(initialDueDate);
-    }, [initialText, initialPriority, initialDueDate]);
+        setTags(initialTags)
+    }, [initialText, initialPriority, initialDueDate, initialTags]);
 
     useEffect(() => {
         if(!isOpen) return;
@@ -22,13 +40,30 @@ export default function EditTaskModal({ initialText="", initialPriority="medium"
             if(e.key === "Escape") onCancel();
             if(e.key === "Enter" && !e.shiftKey){
                 e.preventDefault();
-                if(text.trim()) onSave(text.trim(), priority, dueDate || "");
+                if(text.trim()) onSave(text.trim(), priority, dueDate || "", tags);
             }
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
 
-    }, [isOpen, text, priority, dueDate, onSave, onCancel]);
+    }, [isOpen, text, priority, dueDate, tags, onSave, onCancel]);
+
+    // gets predefined tags to sets as selected tags to add to a task
+    const toggleTag = (tag) => {
+        if(tags.find((t) => t.label === tag.label)){
+            setTags(tags.filter((t) => t.label !== tag.label));
+        } else {
+            setTags([...tags, tag]);
+        }
+    };
+
+    const handleCustomTagAdd = (e) => {
+        e.preventDefault();
+        if(!customTag.trim() || tags.find((t) => t.label === customTag.trim())) return;
+        setTags([...tags, { label: customTag.trim(), color: customColor }]);
+        setCustomTag("");
+        setCustomColor("#3b82f6");
+    };
 
     if(!isOpen) return null;                          // if modal is not open return null
 
@@ -76,6 +111,58 @@ export default function EditTaskModal({ initialText="", initialPriority="medium"
                         value={ dueDate }
                         onChange={ (e) => setDueDate(e.target.value) }
                         className="border rounded px-2 py-1"/>
+                    {/* Predefined Tags */}
+                    <label className="block text-sm font-medium mb-1">Tags</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                        { predefinedTags.map((tag) => (
+                            <button
+                                key={tag.label}
+                                type="button"
+                                onClick={ () => toggleTag(tag) }
+                                className={`px-2 py-1 rounded-full text-xs border ${
+                                    tags.find((t) => t.label === tag.label)
+                                        ? "text-white border-transparent" 
+                                        : "bg-gray-200 text-gray-700 border-gray-300"
+                                }`}
+                                style={{
+                                    backgroundColor: tags.find((t) => t.label === tag.label) ? tag.color : "",
+                                }}>
+                            {tag.label}
+                            </button>
+                        ))}
+                    </div>
+                    {/* Custom tag input */}
+                    <form onSubmit={handleCustomTagAdd} className="flex gap-2 mb-2">
+                        <input 
+                            type="text"
+                            value={customTag}
+                            onChange={ (e) => setCustomTag(e.target.value) }
+                            placeholder="Add Custom tag"
+                            className="border rounded px-2 py-1 flex-1 text-sm"/>
+                        <input 
+                            type="color"
+                            value={customColor}
+                            onChange={ (e) => setCustomColor(e.target.value) }
+                            className="w-12 h-9 p-1 rounded cursor-pointer"/>
+                        <button
+                            type="submit"
+                            className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">
+                            Add
+                        </button>
+                    </form>
+                    {/* Selected tags preview */}
+                    { tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                            {tags.map((tag, index) => (
+                                <span
+                                    key={index}
+                                    className="bg-gray-300 text-gray-700 px-2 py-0.5 rounded-full text-xs"
+                                    style={{ backgroundColor: tag.color }}>
+                                {tag.label}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                     {/* Buttons */}
                     <div className="flex justify-end gap-2">
                         <button
@@ -83,7 +170,7 @@ export default function EditTaskModal({ initialText="", initialPriority="medium"
                             className="bg-green-400 p-2 rounded text-sm hover:bg-green-600"
                             onClick={() => {
                                 if(!text.trim()) return;
-                                onSave(text.trim(), priority, dueDate || "");
+                                onSave(text.trim(), priority, dueDate || "", tags);
                             } }>
                             Save
                         </button>

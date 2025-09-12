@@ -8,10 +8,10 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
     const [expanded, setExpanded] = useState(false);                              // for toggling task text visibility
 
     // Used when modal saves new values
-    const handleSaveFromModal = (newText, newPriority, newDueDate) => {
-        onEdit(task.id, col, newText, newPriority, newDueDate);
+    const handleSaveFromModal = (newText, newPriority, newDueDate, newTags) => {
+        onEdit(task.id, col, newText, newPriority, newDueDate, newTags);
         setShowEditModal(false);
-    }
+    };    
     
     return (
         <div
@@ -81,6 +81,19 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                     </span>
                 ) }
             </div>
+            {/* Tags */}
+            { task.tags && task.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                    {task.tags.map((tag, index) => (
+                        <span
+                            key={index}
+                            className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-xs"
+                            style={{ backgroundColor: tag.color || "#6b7280" }}>     {/* fallback = gray if no customColor */}
+                            {tag.label}
+                        </span>
+                    ))}
+                </div>
+            )}
             <div className="flex gap-3 my-2">
                 {/* Priority */}
                 { task.priority && (
@@ -95,6 +108,7 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                         { task.priority }
                     </span>
                 ) }
+                {/* Modal buttons */}
                 <button
                     onClick={ () => setShowEditModal(true) }
                     aria-label="Edit task"
@@ -115,6 +129,7 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                 initialText={ task.text }
                 initialPriority={ task.priority }
                 initialDueDate= { task.dueDate }
+                initialTags={ task.tags || [] }                       // pass tags if available or just get empty array
                 onSave={ handleSaveFromModal }
                 onCancel={ () => setShowEditModal(false) }
             />

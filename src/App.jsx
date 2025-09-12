@@ -205,18 +205,18 @@ export default function App() {
   // add new task to column
   // NOTE: uses now() for id, which gives milliseconds & text from input but for createdAt, now() will be used as timestamp
   // Timestamp will also be created for edited tasks
-  const handleAddTask = (col, text, priority, dueDate) => {
-    const newTask = { id: Date.now().toString(), text, priority, dueDate, createdAt: Date.now() };
+  const handleAddTask = (col, text, priority, dueDate, tags) => {
+    const newTask = { id: Date.now().toString(), text, priority, dueDate, tags: tags || [], createdAt: Date.now() };
     setBoard((prev) => ({
       ...prev,
       [col]: [...prev[col], newTask],
     }));
   };
 
-  const handleEditTask = (taskId, col, newText, newPriority, newDueDate) => {
+  const handleEditTask = (taskId, col, newText, newPriority, newDueDate, newTags) => {
     setBoard((prev) => ({
       ...prev,
-      [col]: prev[col].map((t) => t.id === taskId ? { ...t, text:newText, priority:newPriority, dueDate:newDueDate, updatedAt:Date.now() } : t),
+      [col]: prev[col].map((t) => t.id === taskId ? { ...t, text:newText, priority:newPriority, dueDate:newDueDate, tags:newTags, updatedAt:Date.now() } : t),
     }));
   };
 
