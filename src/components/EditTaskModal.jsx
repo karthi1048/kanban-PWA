@@ -6,6 +6,7 @@ export default function EditTaskModal({
     initialPriority="medium", 
     initialDueDate="",
     initialTags = [],
+    initialSubTasks = [],
     isOpen, 
     onSave, 
     onCancel,
@@ -16,7 +17,10 @@ export default function EditTaskModal({
     const [dueDate, setDueDate] = useState(initialDueDate || "");
     const [tags, setTags] = useState(initialTags);
     const [customTag, setCustomTag] = useState("");
-    const [customColor, setCustomColor] = useState("#3b82f6");         // default color = blue
+    const [customColor, setCustomColor] = useState("#3b82f6");             // default color = blue
+    const [subTasks, setSubTasks] = useState(initialSubTasks);
+    const [newSubTask, setNewSubTask] = useState("");
+
     // const modelRef = useRef(null);
 
     const predefinedTags = [
@@ -30,8 +34,10 @@ export default function EditTaskModal({
         setPriority(initialPriority);
         setDueDate(initialDueDate);
         setTags(initialTags)
-    }, [initialText, initialPriority, initialDueDate, initialTags]);
+        setSubTasks(initialSubTasks)
+    }, [initialText, initialPriority, initialDueDate, initialTags, initialSubTasks]);
 
+    // For handling the Save & Cancel for each operation.
     useEffect(() => {
         if(!isOpen) return;
         
@@ -40,13 +46,13 @@ export default function EditTaskModal({
             if(e.key === "Escape") onCancel();
             if(e.key === "Enter" && !e.shiftKey){
                 e.preventDefault();
-                if(text.trim()) onSave(text.trim(), priority, dueDate || "", tags);
+                if(text.trim()) onSave(text.trim(), priority, dueDate || "", tags, subTasks);
             }
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
 
-    }, [isOpen, text, priority, dueDate, tags, onSave, onCancel]);
+    }, [isOpen, text, priority, dueDate, tags, subTasks, onSave, onCancel]);
 
     // gets predefined tags to sets as selected tags to add to a task
     const toggleTag = (tag) => {
@@ -63,6 +69,18 @@ export default function EditTaskModal({
         setTags([...tags, { label: customTag.trim(), color: customColor }]);
         setCustomTag("");
         setCustomColor("#3b82f6");
+    };
+
+    // To add or remove subtasks for a particular task
+    const addSubTask = (e) => {
+        e.preventDefault();
+        if(!newSubTask.trim()) return;
+        setSubTasks([...subTasks, { text: newSubTask.trim(), done: false }]);
+        setNewSubTask("");
+    };
+
+    const removeSubTask = (index) => {
+        setSubTasks(subTasks.filter((_, i) => i !== index));
     };
 
     if(!isOpen) return null;                          // if modal is not open return null
@@ -111,6 +129,37 @@ export default function EditTaskModal({
                         value={ dueDate }
                         onChange={ (e) => setDueDate(e.target.value) }
                         className="border rounded px-2 py-1"/>
+                    {/* Subtasks */}
+                    <div className="mb-4">
+                        <p className="text-sm font-medium mb-1">Subtasks</p>
+                        <form onSubmit={addSubTask} className="flex gap-2 mb-2">
+                            <input 
+                                type="text"
+                                value={newSubTask}
+                                onChange={ (e) => setNewSubTask(e.target.value) }
+                                placeholder="Add subtasks..."
+                                className="border rounded px-2 py-1 flex-1 text-sm"/>
+                            <button
+                                type="submit"
+                                className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">
+                                Add
+                            </button>
+                        </form>
+                        <ul className="space-y-1 max-h-32 overflow-y-auto">
+                            {subTasks.map((sub, index) => (
+                                <li
+                                    key={index}
+                                    className="flex items-center justify-between bg-gray-100 px-2 py-1 rounded">
+                                    <span className="text-sm">{sub.text}</span>
+                                    <button
+                                        onClick={ () => removeSubTask(index)}
+                                        className="text-red-500 hover:text-red-700 text-xs">
+                                        ❌
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                     {/* Predefined Tags */}
                     <label className="block text-sm font-medium mb-1">Tags</label>
                     <div className="flex flex-wrap gap-2 mb-2">
@@ -170,7 +219,7 @@ export default function EditTaskModal({
                             className="bg-green-400 p-2 rounded text-sm hover:bg-green-600"
                             onClick={() => {
                                 if(!text.trim()) return;
-                                onSave(text.trim(), priority, dueDate || "", tags);
+                                onSave(text.trim(), priority, dueDate || "", tags, subTasks);
                             } }>
                             Save
                         </button>

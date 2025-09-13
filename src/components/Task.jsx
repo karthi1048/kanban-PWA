@@ -2,14 +2,15 @@ import { useState } from "react";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import EditTaskModal from "./EditTaskModal";
 
-export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouchStart, onDrop }) {
+export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouchStart, onDrop, onToggleSubTask }) {
     const [showConfirm, setShowConfirm] = useState(false);                        // for delete modal
     const [showEditModal, setShowEditModal] = useState(false);                    // for edit task modal
     const [expanded, setExpanded] = useState(false);                              // for toggling task text visibility
+    const [showSubTasks, setShowSubTasks] = useState(false);                      // for toggling subtask visibility
 
     // Used when modal saves new values
-    const handleSaveFromModal = (newText, newPriority, newDueDate, newTags) => {
-        onEdit(task.id, col, newText, newPriority, newDueDate, newTags);
+    const handleSaveFromModal = (newText, newPriority, newDueDate, newTags, newSubTasks) => {
+        onEdit(task.id, col, newText, newPriority, newDueDate, newTags, newSubTasks);
         setShowEditModal(false);
     };    
     
@@ -122,6 +123,39 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                     ✕
                 </button>
             </div>
+            {/* Subtasks toggle btns */}
+            { task.subtasks && task.subtasks.length > 0 && (
+                <button
+                    onClick={ () => setShowSubTasks(!showSubTasks) }
+                    className="text-xs self-start mt-1">
+                    { showSubTasks 
+                        ? "Hide subtasks 🔺" 
+                        : `Show subtasks - (${task.subtasks.filter(sub => sub.done).length}/${task.subtasks.length}) 🔻` 
+                    }
+                    {/* Show subtasks - (done tasks/total tasks) */}
+                </button>
+            )}
+            {/* Subtasks list */}
+            { showSubTasks && task.subtasks && task.subtasks.length > 0 && (
+                <div className="border-t pt-2 mt-2">
+                    <p className="text-sm font-medium mb-1">Subtasks</p>
+                    <ul className="space-y-1">
+                        {task.subtasks.map((sub, index) => (
+                            <li
+                                key={index}
+                                className="flex items-center gap-2">
+                                <input 
+                                    type="checkbox"
+                                    checked={sub.done}
+                                    onChange={ () => onToggleSubTask(task.id, index) }/>
+                                <span className={`text-sm ${sub.done ? "line-through text-gray-500" : ""}`}>
+                                    {sub.text}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            ) }
 
             {/* Edit modal */}
             <EditTaskModal
@@ -130,6 +164,7 @@ export default function Task({ task, col, onEdit, onDelete, onDragStart, onTouch
                 initialPriority={ task.priority }
                 initialDueDate= { task.dueDate }
                 initialTags={ task.tags || [] }                       // pass tags if available or just get empty array
+                initialSubTasks={ task.subtasks || [] }
                 onSave={ handleSaveFromModal }
                 onCancel={ () => setShowEditModal(false) }
             />

@@ -17,6 +17,7 @@ export default function Column({
     handleAddTask,
     handleEditTask,
     handleDeleteTask,
+    handleToggleSubTask,
     // search query from App.jsx
     searchQuery = "",
     // sort props
@@ -104,7 +105,8 @@ export default function Column({
                         onDelete={handleDeleteTask}
                         onDragStart={handleDragStart}
                         onTouchStart={handleTouchStart}
-                        onDrop={handleDrop}/>
+                        onDrop={handleDrop}
+                        onToggleSubTask={ (taskId, subtaskId) => handleToggleSubTask(col, taskId, subtaskId) }/>
                     ))
                 }
             </div>

@@ -206,17 +206,17 @@ export default function App() {
   // NOTE: uses now() for id, which gives milliseconds & text from input but for createdAt, now() will be used as timestamp
   // Timestamp will also be created for edited tasks
   const handleAddTask = (col, text, priority, dueDate, tags) => {
-    const newTask = { id: Date.now().toString(), text, priority, dueDate, tags: tags || [], createdAt: Date.now() };
+    const newTask = { id: Date.now().toString(), text, priority, dueDate, tags: tags || [], createdAt: Date.now(), subtasks: [] };
     setBoard((prev) => ({
       ...prev,
       [col]: [...prev[col], newTask],
     }));
   };
 
-  const handleEditTask = (taskId, col, newText, newPriority, newDueDate, newTags) => {
+  const handleEditTask = (taskId, col, newText, newPriority, newDueDate, newTags, newSubTasks) => {
     setBoard((prev) => ({
       ...prev,
-      [col]: prev[col].map((t) => t.id === taskId ? { ...t, text:newText, priority:newPriority, dueDate:newDueDate, tags:newTags, updatedAt:Date.now() } : t),
+      [col]: prev[col].map((t) => t.id === taskId ? { ...t, text:newText, priority:newPriority, dueDate:newDueDate, tags:newTags, updatedAt:Date.now(), subtasks: newSubTasks || t.subtasks } : t),
     }));
   };
 
@@ -250,6 +250,17 @@ export default function App() {
     setToast(null);
   };
 
+  const handleToggleSubTask = (col, taskId, subtaskId) => {
+    setBoard((prev) => ({
+      ...prev,
+      [col]: prev[col].map((t) => t.id === taskId 
+        ? { ...t, 
+          subtasks: t.subtasks.map((sub, index) => index === subtaskId ? { ...sub, done: !sub.done } : sub), } 
+        : t ),
+    }));
+  };
+  // Using array index as id for subtasks
+
   return (
     <div className='flex flex-col h-screen'>
       <h1 className='text-3xl m-4 font-semibold text-center'>Kanban</h1>
@@ -276,6 +287,7 @@ export default function App() {
             handleAddTask={handleAddTask}
             handleEditTask={handleEditTask}
             handleDeleteTask={handleDeleteTask}
+            handleToggleSubTask={handleToggleSubTask}
             searchQuery={searchQuery}
             sortOrder={ sortOrders[col] || "default" }
             setSortOrder={(order) => {
